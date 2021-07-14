@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="vue.min.js"></script>
+        <script src="TriangleMesh.js"></script>
+        <style>
+            line.edge{
+                stroke:rgb(252, 39, 110);
+            }
+            line.boundary{
+                stroke-width: 3;
+                stroke-dasharray:10;
+                stroke:rgb(39, 252, 110);
+            }
+            polygon.boundary{
+                fill: rgb(39, 252, 252);
+                opacity: 0.5;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="vueapp">
+            <svg width="1024" height="768" style="background-color:#c0c0c0">
+                <g> <!-- 多边形填充 -->
+                    <polygon class="boundary" :points="edgePoints"/>
+                </g>
+
+                <!-- 内部边填充（太多不显示） -->
+                <g v-if="triangleMesh.Edges.length<=3000">
+                    <g v-for="edge in triangleMesh.Edges">
+                        <line class="edge" 
+                            :x1="edge.ctx.getVertex(edge.U).x" 
+                            :y1="edge.ctx.getVertex(edge.U).z" 
+                            :x2="edge.ctx.getVertex(edge.V).x" 
+                            :y2="edge.ctx.getVertex(edge.V).z" />
+                    </g>
+                </g>
+
+                <!-- 边界显示 -->
+                <g v-for="edge in triangleMesh.BoundaryEdges">
+                    <line class="boundary" 
+                        :x1="edge.ctx.getVertex(edge.U).x" 
+                        :y1="edge.ctx.getVertex(edge.U).z" 
+                        :x2="edge.ctx.getVertex(edge.V).x" 
+                        :y2="edge.ctx.getVertex(edge.V).z" />
+                </g>
+                
+            </svg>
+        </div>
+        
+        <script>
+            //随机生成n个点
+            var vertices=[];
+            var n=500;
+            var range=[100, 900, 100, 700];
+            for(var i=0;i<n;++i){
+                vertices.push(
+                    new Vector2(
+                        range[0]+Math.random()*(range[1]-range[0]),
+                        range[2]+Math.random()*(range[3]-range[2])
+                    )
+                );
+            }
+
+            //三角剖分
+            console.time("n="+n);
+            var triangleMesh=TriangleMesh.Triangulate2(vertices);
+            console.timeEnd("n="+n);
+            console.log(triangleMesh)
+
+            var vueapp=new Vue({
+                el:"#vueapp",
+                data:{
+                    triangleMesh:triangleMesh,
+                    edgePoints:triangleMesh.BoundaryEdges.map(edge=>{
+                        var v=edge.ctx.getVertex(edge.U);
+                        return v.x+","+v.z;
+                    }).join(",")
+                }
+            })
+        </script>
+    </body>
+</html>
